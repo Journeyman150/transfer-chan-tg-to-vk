@@ -3,7 +3,10 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -136,9 +139,88 @@ func (c *BotAPIClient) GetChannelInfo(ctx context.Context, channelID string) (*C
 
 // GetPosts fetches posts from channel with pagination
 func (c *BotAPIClient) GetPosts(ctx context.Context, channelID string, opts GetPostsOptions) ([]Post, error) {
-	// TODO: Implement post fetching
-	c.logger.Warn("GetPosts not yet implemented", zap.String("channel", channelID))
-	return nil, fmt.Errorf("not implemented")
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("rate limit wait: %w", err)
+	}
+
+	// Get chat info to get numeric ID for filtering
+	chatConfig := createChatConfig(channelID)
+	chat, err := c.bot.GetChat(tgbotapi.ChatInfoConfig{
+		ChatConfig: chatConfig,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chat info: %w", err)
+	}
+	chatID := chat.ID
+
+	var posts []Post
+	var offset int
+	limit := opts.Limit
+	if limit == 0 {
+		limit = 100 // default limit
+	}
+
+	for len(posts) < limit {
+		if err := c.limiter.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("rate limit wait: %w", err)
+		}
+
+		updates, err := c.bot.GetUpdates(tgbotapi.UpdateConfig{
+			Offset:  offset,
+			Limit:   100,
+			Timeout: 0,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get updates: %w", err)
+		}
+
+		if len(updates) == 0 {
+			break // no more updates
+		}
+
+		for _, update := range updates {
+			var msg *tgbotapi.Message
+			if update.ChannelPost != nil {
+				msg = update.ChannelPost
+			} else if update.Message != nil {
+				msg = update.Message
+			} else {
+				continue
+			}
+
+			// Filter by chat ID
+			if msg.Chat.ID != chatID {
+				continue
+			}
+
+			// Convert to Post
+			post := c.convertMessage(*msg)
+			posts = append(posts, post)
+
+			if len(posts) >= limit {
+				break
+			}
+		}
+
+		offset = updates[len(updates)-1].UpdateID + 1
+	}
+
+	// Apply date filters if specified
+	if !opts.StartDate.IsZero() || !opts.EndDate.IsZero() {
+		filtered := make([]Post, 0, len(posts))
+		for _, post := range posts {
+			if !opts.StartDate.IsZero() && post.Date.Before(opts.StartDate) {
+				continue
+			}
+			if !opts.EndDate.IsZero() && post.Date.After(opts.EndDate) {
+				continue
+			}
+			filtered = append(filtered, post)
+		}
+		posts = filtered
+	}
+
+	return posts, nil
 }
 
 // GetPostByID fetches a specific post
@@ -167,13 +249,73 @@ func (c *BotAPIClient) GetMediaURL(ctx context.Context, fileID string) (string, 
 
 // DownloadMedia downloads media to local file
 func (c *BotAPIClient) DownloadMedia(ctx context.Context, fileID, destPath string) error {
-	_, err := c.GetMediaURL(ctx, fileID)
+	url, err := c.GetMediaURL(ctx, fileID)
 	if err != nil {
-		return err
+		return fmt.Errorf("get media URL: %w", err)
 	}
 
-	// TODO: implement download with retry and progress
-	return fmt.Errorf("download not implemented")
+	// Create destination directory if needed
+	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		return fmt.Errorf("create directory: %w", err)
+	}
+
+	// Download with retry
+	var lastErr error
+	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
+		if attempt > 0 {
+			// Exponential backoff
+			delay := time.Duration(1<<uint(attempt-1)) * time.Second
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+			}
+			c.logger.Warn("Retrying download", zap.String("fileID", fileID), zap.Int("attempt", attempt))
+		}
+
+		err := c.downloadFile(ctx, url, destPath)
+		if err == nil {
+			c.logger.Info("Media downloaded successfully", zap.String("fileID", fileID), zap.String("path", destPath))
+			return nil
+		}
+		lastErr = err
+		c.logger.Warn("Download failed", zap.String("fileID", fileID), zap.Int("attempt", attempt+1), zap.Error(err))
+	}
+
+	return fmt.Errorf("failed after %d retries: %w", c.config.MaxRetries, lastErr)
+}
+
+// downloadFile performs a single HTTP GET request to download a file
+func (c *BotAPIClient) downloadFile(ctx context.Context, url, destPath string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP status %d", resp.StatusCode)
+	}
+
+	// Create destination file
+	out, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("create file: %w", err)
+	}
+	defer out.Close()
+
+	// Copy with timeout
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+
+	return nil
 }
 
 // Close releases resources
@@ -184,6 +326,133 @@ func (c *BotAPIClient) Close() error {
 
 // convertMessage converts tgbotapi.Message to our Post type
 func (c *BotAPIClient) convertMessage(msg tgbotapi.Message) Post {
-	// TODO: implement conversion
-	return Post{}
+	post := Post{
+		ID:   int64(msg.MessageID),
+		Date: time.Unix(int64(msg.Date), 0),
+		Text: msg.Text,
+	}
+
+	// EditDate
+	if msg.EditDate != 0 {
+		editTime := time.Unix(int64(msg.EditDate), 0)
+		post.EditDate = &editTime
+	}
+
+	// Media attachments
+	var media []Media
+	// Photos
+	for _, photo := range msg.Photo {
+		media = append(media, Media{
+			Type:        MediaTypePhoto,
+			FileID:      photo.FileID,
+			FileUniqueID: photo.FileUniqueID,
+			FileSize:    int64(photo.FileSize),
+			Width:       photo.Width,
+			Height:      photo.Height,
+			Caption:     msg.Caption,
+		})
+	}
+	// Video
+	if msg.Video != nil {
+		media = append(media, Media{
+			Type:        MediaTypeVideo,
+			FileID:      msg.Video.FileID,
+			FileUniqueID: msg.Video.FileUniqueID,
+			FileSize:    int64(msg.Video.FileSize),
+			Width:       msg.Video.Width,
+			Height:      msg.Video.Height,
+			Duration:    msg.Video.Duration,
+			FileName:    msg.Video.FileName,
+			MimeType:    msg.Video.MimeType,
+			Caption:     msg.Caption,
+		})
+	}
+	// Document
+	if msg.Document != nil {
+		media = append(media, Media{
+			Type:        MediaTypeDocument,
+			FileID:      msg.Document.FileID,
+			FileUniqueID: msg.Document.FileUniqueID,
+			FileSize:    int64(msg.Document.FileSize),
+			FileName:    msg.Document.FileName,
+			MimeType:    msg.Document.MimeType,
+			Caption:     msg.Caption,
+		})
+	}
+	// Audio
+	if msg.Audio != nil {
+		media = append(media, Media{
+			Type:        MediaTypeAudio,
+			FileID:      msg.Audio.FileID,
+			FileUniqueID: msg.Audio.FileUniqueID,
+			FileSize:    int64(msg.Audio.FileSize),
+			Duration:    msg.Audio.Duration,
+			FileName:    msg.Audio.FileName,
+			MimeType:    msg.Audio.MimeType,
+			Caption:     msg.Caption,
+		})
+	}
+	// Voice
+	if msg.Voice != nil {
+		media = append(media, Media{
+			Type:        MediaTypeVoice,
+			FileID:      msg.Voice.FileID,
+			FileUniqueID: msg.Voice.FileUniqueID,
+			FileSize:    int64(msg.Voice.FileSize),
+			Duration:    msg.Voice.Duration,
+			Caption:     msg.Caption,
+		})
+	}
+	// Sticker
+	if msg.Sticker != nil {
+		media = append(media, Media{
+			Type:        MediaTypeSticker,
+			FileID:      msg.Sticker.FileID,
+			FileUniqueID: msg.Sticker.FileUniqueID,
+			FileSize:    int64(msg.Sticker.FileSize),
+			Width:       msg.Sticker.Width,
+			Height:      msg.Sticker.Height,
+			Caption:     msg.Caption,
+		})
+	}
+	// Animation (GIF)
+	if msg.Animation != nil {
+		media = append(media, Media{
+			Type:        MediaTypeAnimation,
+			FileID:      msg.Animation.FileID,
+			FileUniqueID: msg.Animation.FileUniqueID,
+			FileSize:    int64(msg.Animation.FileSize),
+			Width:       msg.Animation.Width,
+			Height:      msg.Animation.Height,
+			Duration:    msg.Animation.Duration,
+			FileName:    msg.Animation.FileName,
+			MimeType:    msg.Animation.MimeType,
+			Caption:     msg.Caption,
+		})
+	}
+	post.Media = media
+
+	// ForwardedFrom
+	if msg.ForwardFromChat != nil {
+		forwardInfo := &ForwardInfo{
+			FromChatID:   msg.ForwardFromChat.ID,
+			FromChatName: msg.ForwardFromChat.Title,
+			MessageID:    int64(msg.ForwardFromMessageID),
+			Date:         time.Unix(int64(msg.ForwardDate), 0),
+		}
+		post.ForwardedFrom = forwardInfo
+	}
+
+	// Views (not available in Bot API, leave zero)
+	// Reactions (not available in Bot API, leave empty)
+	// Link generation
+	if msg.Chat.UserName != "" {
+		post.Link = fmt.Sprintf("https://t.me/%s/%d", msg.Chat.UserName, msg.MessageID)
+	} else {
+		post.Link = fmt.Sprintf("https://t.me/c/%d/%d", msg.Chat.ID, msg.MessageID)
+	}
+
+	// HasSpoiler (not available in Bot API, leave false)
+
+	return post
 }

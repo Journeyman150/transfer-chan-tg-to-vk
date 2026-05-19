@@ -35,20 +35,20 @@ Last updated: 2026-05-19
 ### 1. Telegram API Client
 - [x] Implement authentication - **Completed** (BotAPIClient with config)
 - [x] Add channel info fetching - **Completed** (GetChannelInfo)
-- [x] Create post fetching with pagination - **Partially implemented** (placeholder, needs actual implementation)
-- [ ] Handle rate limiting - **Partially implemented** (rate limiter present, but not fully integrated)
+- [x] Create post fetching with pagination - **Implemented** (uses GetUpdates with pagination, limited to recent posts)
+- [x] Handle rate limiting - **Implemented** (rate limiter integrated in all API calls)
 
 ### 2. Media Downloader
-- [ ] Implement file download with retries - **Not started**
+- [x] Implement file download with retries - **Implemented** (DownloadMedia with exponential backoff)
 - [ ] Add temporary storage management - **Not started**
 - [ ] Support concurrent downloads - **Not started**
 
 ### 3. Telegram Data Models
 - [x] Define Go structs for Telegram entities - **Completed** (types.go)
-- [ ] Implement entity parsing - **Not started**
-- [ ] Add media type detection - **Not started**
+- [ ] Implement entity parsing - **Not started** (MessageEntity parsing not yet implemented)
+- [x] Add media type detection - **Implemented** (convertMessage detects photo, video, document, audio, voice, sticker, animation)
 
-**Phase 2 Completion:** ~40% (core client and data models done, missing media download and post fetching implementation)
+**Phase 2 Completion:** ~70% (core client, post fetching, media download, and media type detection implemented; missing entity parsing, temporary storage, concurrent downloads)
 
 ## Phase 3: VK Integration (Week 3)
 
@@ -127,7 +127,7 @@ Last updated: 2026-05-19
 | Phase | Status | Completion |
 |-------|--------|------------|
 | Phase 1: Core Infrastructure | Completed | ~95% |
-| Phase 2: Telegram Integration | In Progress | ~40% |
+| Phase 2: Telegram Integration | In Progress | ~70% |
 | Phase 3: VK Integration | Not Started | 0% |
 | Phase 4: Content Transformation | Not Started | 0% |
 | Phase 5: Integration & Testing | Not Started | 0% |
@@ -135,15 +135,21 @@ Last updated: 2026-05-19
 
 ## Next Immediate Actions
 
-1. **Finalize Phase 1:**
+1. **Complete Phase 2 (Telegram Integration):**
+   - Implement entity parsing (MessageEntity to HTML)
+   - Add temporary storage management for downloaded media
+   - Support concurrent downloads
+   - Improve post fetching to handle historical messages (consider using GetChatHistory if available)
+
+2. **Start Phase 3 (VK Integration):**
+   - Implement VK API client authentication
+   - Add wall.post functionality
+   - Create media upload (photos, videos, documents)
+   - Define VK data models
+
+3. **Finalize Phase 1:**
    - Add unit tests for config and logger packages
    - Ensure all Go code passes vet and lint
-
-2. **Start Phase 2 (Telegram Integration):**
-   - Create Telegram client package (`internal/telegram/`)
-   - Implement basic authentication and channel info fetching
-   - Define Telegram data models (`types.go`)
-   - Implement post fetching with pagination
 
 ## Notes
 
