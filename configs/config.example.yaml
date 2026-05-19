@@ -1,0 +1,70 @@
+# Telegram to VK Transfer Configuration
+# Minimal configuration - just fill in the 4 required values below!
+
+telegram:
+  # REQUIRED: Bot token from @BotFather
+  bot_token: "YOUR_BOT_TOKEN_HERE"
+  
+  # REQUIRED: Channel identifier (use @username for public channels)
+  channel_id: "@example_channel"
+  
+  # Optional: Most users won't need to change these
+  # api_url: "https://api.telegram.org"
+  # timeout: "30s"
+  # requests_per_second: 20
+  # max_retries: 3
+  # include_media: true
+  # max_file_size: "100MB"
+
+vk:
+  # REQUIRED: Access token with required permissions
+  access_token: "YOUR_VK_ACCESS_TOKEN_HERE"
+  
+  # REQUIRED: Group ID
+  group_id: 123456789
+  
+  # Optional: Sensible defaults
+  # api_version: "5.199"
+  # timeout: "60s"
+  # language: "ru"
+  # requests_per_second: 3.0
+  # max_retries: 3
+  # from_group: true
+  # signed: true
+  # post_delay: "3s"
+
+transfer:
+  # Safety first: dry-run by default (set to false for actual transfer)
+  dry_run: true
+  
+  # Content handling
+  include_text: true
+  include_media: true
+  
+  # Smart defaults
+  skip_duplicates: true
+  preserve_formatting: true
+  add_source_link: true
+  source_link_format: "Источник: %s"
+
+media:
+  # Temporary storage (created automatically)
+  temp_dir: "./temp"
+  keep_files: false
+  
+  # Concurrent operations (optimized for stability)
+  max_concurrent_downloads: 3
+  max_concurrent_uploads: 2
+
+# Advanced settings (most users don't need to change these)
+# logging:
+#   level: "info"
+#   encoding: "json"
+#   output_path: "./logs/transfer.log"
+#
+# error_handling:
+#   retry:
+#     max_attempts: 3
+#     base_delay: "1s"
+#     max_delay: "30s"
+#     jitter: true

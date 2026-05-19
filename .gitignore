@@ -1,0 +1,66 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# Checkpoints
+checkpoints/
+
+# Configuration files (user-specific)
+configs/config.yaml
+configs/*.local.yaml
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Go
+# Dependency directories
+vendor/
+# Go workspace file
+go.work
+go.work.sum
+
+# Coverage
+coverage.txt
+coverage.out
+*.cover
+
+# Test artifacts
+_test/
+*.test
+
+# Build artifacts
+*.out
+*.prof
+
+# Environment files
+.env
+.env.local
+.env.*.local
