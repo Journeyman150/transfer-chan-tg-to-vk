@@ -2,7 +2,7 @@
 
 This document tracks the progress of the Telegram to VK content transfer project against the plan outlined in `plans/summary_plan.md`.
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 ## Phase 1: Core Infrastructure (Week 1)
 
@@ -40,15 +40,15 @@ Last updated: 2026-05-19
 
 ### 2. Media Downloader
 - [x] Implement file download with retries - **Implemented** (DownloadMedia with exponential backoff)
-- [ ] Add temporary storage management - **Not started**
-- [ ] Support concurrent downloads - **Not started**
+- [x] Add temporary storage management - **Implemented** (StorageManager in internal/media)
+- [x] Support concurrent downloads - **Implemented** (Downloader with semaphore concurrency)
 
 ### 3. Telegram Data Models
 - [x] Define Go structs for Telegram entities - **Completed** (types.go)
 - [ ] Implement entity parsing - **Not started** (MessageEntity parsing not yet implemented)
 - [x] Add media type detection - **Implemented** (convertMessage detects photo, video, document, audio, voice, sticker, animation)
 
-**Phase 2 Completion:** ~70% (core client, post fetching, media download, and media type detection implemented; missing entity parsing, temporary storage, concurrent downloads)
+**Phase 2 Completion:** ~90% (core client, post fetching, media download, and media type detection implemented; missing entity parsing)
 
 ## Phase 3: VK Integration (Week 3)
 
@@ -127,7 +127,7 @@ Last updated: 2026-05-19
 | Phase | Status | Completion |
 |-------|--------|------------|
 | Phase 1: Core Infrastructure | Completed | ~95% |
-| Phase 2: Telegram Integration | In Progress | ~70% |
+| Phase 2: Telegram Integration | In Progress | ~90% |
 | Phase 3: VK Integration | Not Started | 0% |
 | Phase 4: Content Transformation | Not Started | 0% |
 | Phase 5: Integration & Testing | Not Started | 0% |
@@ -137,8 +137,6 @@ Last updated: 2026-05-19
 
 1. **Complete Phase 2 (Telegram Integration):**
    - Implement entity parsing (MessageEntity to HTML)
-   - Add temporary storage management for downloaded media
-   - Support concurrent downloads
    - Improve post fetching to handle historical messages (consider using GetChatHistory if available)
 
 2. **Start Phase 3 (VK Integration):**
