@@ -74,16 +74,16 @@ Last updated: 2026-05-20
 - [x] Implement text truncation for VK limits - **Completed**
 
 ### 2. Media Transformer
-- [ ] Map Telegram media types to VK attachments - **Not started**
-- [ ] Handle unsupported media types - **Not started**
-- [ ] Implement media type conversion - **Not started**
+- [x] Map Telegram media types to VK attachments - **Completed**
+- [x] Handle unsupported media types - **Completed**
+- [x] Implement media type conversion - **Completed** (basic mapping; advanced conversion not implemented)
 
 ### 3. Post Assembler
 - [ ] Combine text and media into VK posts - **Not started**
 - [ ] Handle forwarded messages - **Not started**
 - [ ] Add source links and metadata - **Not started**
 
-**Phase 4 Completion:** 33%
+**Phase 4 Completion:** 66%
 
 ## Phase 5: Integration & Testing (Week 5)
 
