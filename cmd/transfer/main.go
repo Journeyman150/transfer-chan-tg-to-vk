@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 
 	"ai-transfer-tg-to-vk/internal/config"
 	"ai-transfer-tg-to-vk/internal/logger"
+	"ai-transfer-tg-to-vk/internal/transfer"
 	"go.uber.org/zap"
 )
 
@@ -61,10 +63,22 @@ func main() {
 		zap.Bool("dry_run", cfg.Transfer.DryRun),
 	)
 
-	// TODO: Implement actual transfer logic
-	log.Info("Transfer logic not yet implemented")
+	// Create transfer orchestrator
+	transfer, err := transfer.NewTransfer(cfg, log)
+	if err != nil {
+		log.Error("Failed to create transfer orchestrator", zap.Error(err))
+		os.Exit(1)
+	}
+	defer transfer.Close()
 
-	log.Info("Application finished")
+	// Run transfer with context
+	ctx := context.Background()
+	if err := transfer.Run(ctx); err != nil {
+		log.Error("Transfer failed", zap.Error(err))
+		os.Exit(1)
+	}
+
+	log.Info("Application finished successfully")
 }
 
 func loadConfig(configPath string) (*config.Config, error) {
