@@ -53,17 +53,17 @@ Last updated: 2026-05-20
 ## Phase 3: VK Integration (Week 3)
 
 ### 1. VK API Client
-- [ ] Implement authentication - **Not started**
-- [ ] Add wall.post functionality - **Not started**
-- [ ] Create media upload (photos, videos, documents) - **Not started**
-- [ ] Handle VK-specific rate limits - **Not started**
+- [x] Implement authentication - **Completed** (NewClient with access token)
+- [x] Add wall.post functionality - **Completed** (Post method)
+- [x] Create media upload (photos, videos, documents) - **Partially completed** (photo upload implemented, video and document stubs)
+- [x] Handle VK-specific rate limits - **Basic rate limiting implemented** (token bucket limiter)
 
 ### 2. VK Data Models
-- [ ] Define Go structs for VK entities - **Not started**
-- [ ] Implement attachment formatting - **Not started**
-- [ ] Add error handling for VK API errors - **Not started**
+- [x] Define Go structs for VK entities - **Completed** (types.go)
+- [x] Implement attachment formatting - **Completed** (formatAttachment)
+- [ ] Add error handling for VK API errors - **Basic error handling** (needs flood control detection)
 
-**Phase 3 Completion:** 0%
+**Phase 3 Completion:** ~80%
 
 ## Phase 4: Content Transformation (Week 4)
 
@@ -128,7 +128,7 @@ Last updated: 2026-05-20
 |-------|--------|------------|
 | Phase 1: Core Infrastructure | Completed | ~95% |
 | Phase 2: Telegram Integration | In Progress | ~90% |
-| Phase 3: VK Integration | Not Started | 0% |
+| Phase 3: VK Integration | In Progress | ~80% |
 | Phase 4: Content Transformation | Not Started | 0% |
 | Phase 5: Integration & Testing | Not Started | 0% |
 | Phase 6: Polish & Documentation | Not Started | 0% |
@@ -139,11 +139,10 @@ Last updated: 2026-05-20
    - Implement entity parsing (MessageEntity to HTML)
    - Improve post fetching to handle historical messages (consider using GetChatHistory if available)
 
-2. **Start Phase 3 (VK Integration):**
-   - Implement VK API client authentication
-   - Add wall.post functionality
-   - Create media upload (photos, videos, documents)
-   - Define VK data models
+2. **Continue Phase 3 (VK Integration):**
+   - Complete video and document upload implementations
+   - Add flood control error handling
+   - Integrate VK client with transfer pipeline
 
 3. **Finalize Phase 1:**
    - Add unit tests for config and logger packages
