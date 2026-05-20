@@ -327,9 +327,11 @@ func (c *BotAPIClient) Close() error {
 // convertMessage converts tgbotapi.Message to our Post type
 func (c *BotAPIClient) convertMessage(msg tgbotapi.Message) Post {
 	post := Post{
-		ID:   int64(msg.MessageID),
-		Date: time.Unix(int64(msg.Date), 0),
-		Text: msg.Text,
+		ID:               int64(msg.MessageID),
+		Date:             time.Unix(int64(msg.Date), 0),
+		Text:             msg.Text,
+		Entities:         msg.Entities,
+		CaptionEntities:  msg.CaptionEntities,
 	}
 
 	// EditDate

@@ -45,10 +45,10 @@ Last updated: 2026-05-20
 
 ### 3. Telegram Data Models
 - [x] Define Go structs for Telegram entities - **Completed** (types.go)
-- [ ] Implement entity parsing - **Not started** (MessageEntity parsing not yet implemented)
+- [x] Implement entity parsing - **Implemented** (Entities and CaptionEntities fields added to Post, populated in convertMessage)
 - [x] Add media type detection - **Implemented** (convertMessage detects photo, video, document, audio, voice, sticker, animation)
 
-**Phase 2 Completion:** ~90% (core client, post fetching, media download, and media type detection implemented; missing entity parsing)
+**Phase 2 Completion:** 100% (all Telegram integration components implemented)
 
 ## Phase 3: VK Integration (Week 3)
 

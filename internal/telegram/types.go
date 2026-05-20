@@ -1,6 +1,10 @@
 package telegram
 
-import "time"
+import (
+	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
 // MediaType represents different media types
 type MediaType string
@@ -31,16 +35,18 @@ type Media struct {
 
 // Post represents a Telegram channel post
 type Post struct {
-	ID            int64
-	Date          time.Time
-	EditDate      *time.Time
-	Text          string
-	Media         []Media
-	ForwardedFrom *ForwardInfo
-	Views         int
-	Reactions     []Reaction
-	Link          string // t.me/channel/123
-	HasSpoiler    bool
+	ID               int64
+	Date             time.Time
+	EditDate         *time.Time
+	Text             string
+	Entities         []tgbotapi.MessageEntity // formatting entities in Text
+	CaptionEntities  []tgbotapi.MessageEntity // formatting entities in Caption (if any)
+	Media            []Media
+	ForwardedFrom    *ForwardInfo
+	Views            int
+	Reactions        []Reaction
+	Link             string // t.me/channel/123
+	HasSpoiler       bool
 }
 
 // ForwardInfo contains information about forwarded message
