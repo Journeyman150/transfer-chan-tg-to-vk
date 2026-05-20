@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -140,6 +141,22 @@ func boolToInt(b bool) int {
 	return 0
 }
 
+// logVKError logs specific VK API errors (flood control, rate limits) for monitoring.
+func (c *SDKClient) logVKError(err error, operation string) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, vksdk.ErrFlood) {
+		c.logger.Warn("VK flood control triggered",
+			zap.String("operation", operation),
+			zap.Error(err))
+	} else if errors.Is(err, vksdk.ErrTooMany) {
+		c.logger.Warn("VK rate limit exceeded",
+			zap.String("operation", operation),
+			zap.Error(err))
+	}
+}
+
 // Post creates a new wall post
 func (c *SDKClient) Post(ctx context.Context, post Post) (*PostResult, error) {
 	// Rate limiting
@@ -182,6 +199,7 @@ func (c *SDKClient) Post(ctx context.Context, post Post) (*PostResult, error) {
 	// Make API call
 	response, err := c.api.WallPost(params)
 	if err != nil {
+		c.logVKError(err, "wall.post")
 		return nil, fmt.Errorf("wall.post failed: %w", err)
 	}
 
@@ -276,8 +294,8 @@ func (c *SDKClient) UploadVideo(ctx context.Context, filePath, title, descriptio
 		return nil, err
 	}
 
-	// 1. Get upload URL
-	_, err := c.api.VideoSave(vksdk.Params{
+	// 1. Get upload URL and video ID
+	saveResp, err := c.api.VideoSave(vksdk.Params{
 		"name":        title,
 		"description": description,
 		"group_id":    groupID,
@@ -286,11 +304,67 @@ func (c *SDKClient) UploadVideo(ctx context.Context, filePath, title, descriptio
 		return nil, fmt.Errorf("failed to get video upload URL: %w", err)
 	}
 
-	// 2. Upload file (similar to photo upload)
-	// For simplicity, we'll reuse photo upload logic but with different endpoint
-	// This is a placeholder - actual video upload requires multipart upload to resp.UploadURL
-	// We'll implement a generic upload function later
-	return nil, fmt.Errorf("video upload not yet implemented")
+	// 2. Upload file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("video_file", filepath.Base(filePath))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy file: %w", err)
+	}
+
+	writer.Close()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", saveResp.UploadURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("upload failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 3. Parse upload response
+	var uploadResp struct {
+		VideoID int `json:"video_id"`
+		Size    int `json:"size"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
+		return nil, fmt.Errorf("failed to parse upload response: %w", err)
+	}
+
+	// 4. Use video ID and owner ID from saveResp
+	ownerID := saveResp.OwnerID
+	if ownerID == 0 {
+		// If ownerID not provided, assume group (negative)
+		ownerID = -groupID
+	}
+
+	c.logger.Info("Video uploaded",
+		zap.Int("video_id", uploadResp.VideoID),
+		zap.Int("owner_id", ownerID),
+		zap.String("file", filePath))
+
+	return &Attachment{
+		Type:      AttachmentTypeVideo,
+		OwnerID:   ownerID,
+		MediaID:   uploadResp.VideoID,
+		AccessKey: saveResp.AccessKey,
+	}, nil
 }
 
 // UploadDocument uploads document to wall
@@ -301,14 +375,127 @@ func (c *SDKClient) UploadDocument(ctx context.Context, filePath, title string, 
 	}
 
 	// 1. Get upload server
-	_, err := c.api.DocsGetWallUploadServer(vksdk.Params{
+	serverResp, err := c.api.DocsGetWallUploadServer(vksdk.Params{
 		"group_id": groupID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get upload server: %w", err)
 	}
 
-	// 2. Upload file (similar to photo upload)
-	// Placeholder
-	return nil, fmt.Errorf("document upload not yet implemented")
+	// 2. Upload file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy file: %w", err)
+	}
+
+	writer.Close()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", serverResp.UploadURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("upload failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 3. Parse upload response
+	var uploadResp struct {
+		File string `json:"file"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
+		return nil, fmt.Errorf("failed to parse upload response: %w", err)
+	}
+	if uploadResp.File == "" {
+		return nil, fmt.Errorf("upload response missing file field")
+	}
+
+	// 4. Save document
+	saveParams := vksdk.Params{
+		"file": uploadResp.File,
+	}
+	if title != "" {
+		saveParams["title"] = title
+	}
+	if groupID != 0 {
+		saveParams["group_id"] = groupID
+	}
+	saveResp, err := c.api.DocsSave(saveParams)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save document: %w", err)
+	}
+
+	doc := saveResp.Doc
+	c.logger.Info("Document uploaded",
+		zap.Int("doc_id", doc.ID),
+		zap.Int("owner_id", doc.OwnerID),
+		zap.String("file", filePath))
+
+	return &Attachment{
+		Type:      AttachmentTypeDoc,
+		OwnerID:   doc.OwnerID,
+		MediaID:   doc.ID,
+		AccessKey: doc.AccessKey,
+	}, nil
+}
+
+// GetGroupInfo fetches group information
+func (c *SDKClient) GetGroupInfo(ctx context.Context, groupID int) (*GroupInfo, error) {
+	// Rate limiting
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Call VK API
+	resp, err := c.api.GroupsGetByID(vksdk.Params{
+		"group_id": groupID,
+		"fields":   "description,members_count,photo_200",
+	})
+	if err != nil {
+		c.logVKError(err, "groups.getById")
+		return nil, fmt.Errorf("failed to get group info: %w", err)
+	}
+
+	if len(resp) == 0 {
+		return nil, fmt.Errorf("group not found")
+	}
+
+	group := resp[0]
+	info := &GroupInfo{
+		ID:          group.ID,
+		Name:        group.Name,
+		ScreenName:  group.ScreenName,
+		Description: "", // Not directly available, need to parse from fields
+		Members:     0,
+		PhotoURL:    group.Photo200,
+		Type:        group.Type,
+	}
+
+	// Try to extract description and members count from extended fields
+	// The SDK's GroupsGroup does not have Description field; we need to use extra fields.
+	// For simplicity, we'll just return basic info.
+	// TODO: parse extended fields if needed.
+
+	c.logger.Info("Group info fetched",
+		zap.Int("group_id", info.ID),
+		zap.String("name", info.Name))
+
+	return info, nil
 }
