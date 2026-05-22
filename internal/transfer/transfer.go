@@ -305,9 +305,17 @@ func (t *Transfer) downloadMedia(ctx context.Context, mediaItems []tg.Media) ([]
 		go func(mediaItem tg.Media) {
 			defer wg.Done()
 			
+			// Get download URL from Telegram
+			url, err := t.telegramClient.GetMediaURL(ctx, mediaItem.FileID)
+			if err != nil {
+				errors <- fmt.Errorf("failed to get media URL for %s: %w", mediaItem.FileID, err)
+				return
+			}
+			
 			// Create download request - convert Telegram MediaType to media.MediaType
 			req := media.DownloadRequest{
 				FileID: mediaItem.FileID,
+				URL:    url,
 				Type:   media.MediaType(mediaItem.Type),
 			}
 			

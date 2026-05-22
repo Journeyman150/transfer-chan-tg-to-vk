@@ -179,9 +179,18 @@ func (pt *ProgressTracker) GetRemainingTime() time.Duration {
 }
 
 // logProgress logs the current progress.
+// Caller must hold pt.mu lock.
 func (pt *ProgressTracker) logProgress() {
-	percentage := pt.GetPercentage()
-	remaining := pt.GetRemainingTime()
+	// Calculate percentage
+	var percentage float64
+	if pt.progress.TotalPosts > 0 {
+		percentage = float64(pt.progress.ProcessedPosts) / float64(pt.progress.TotalPosts) * 100
+	}
+	// Calculate remaining time
+	var remaining time.Duration
+	if !pt.progress.ETA.IsZero() {
+		remaining = time.Until(pt.progress.ETA)
+	}
 
 	pt.logger.Info("Transfer progress",
 		zap.Int("processed", pt.progress.ProcessedPosts),

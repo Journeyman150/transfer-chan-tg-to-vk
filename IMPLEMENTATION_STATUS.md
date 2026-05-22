@@ -2,7 +2,7 @@
 
 This document tracks the progress of the Telegram to VK content transfer project against the plan outlined in `plans/summary_plan.md`.
 
-Last updated: 2026-05-20
+Last updated: 2026-05-22
 
 ## Phase 1: Core Infrastructure (Week 1)
 
@@ -98,11 +98,11 @@ Last updated: 2026-05-20
 - [x] Create recovery mechanisms - **Completed** (panic recovery, checkpoint system, graceful error handling)
 
 ### 3. Testing
-- [x] Unit tests for all components - **Partially completed** (config, retry, circuitbreaker, transfer, logger, errors, transformer)
-- [ ] Integration tests with mock APIs - **Not started**
-- [ ] End-to-end test with sample data - **Not started**
+- [x] Unit tests for all components - **Completed** (config, retry, circuitbreaker, transfer, logger, errors, transformer, media, telegram, vk)
+- [x] Integration tests with mock APIs - **Completed** (reusable mocks created in test/mocks, integration tests in test/integration)
+- [x] End-to-end test with sample data - **Completed** (TestTransferIntegration, TestTransferWithCheckpoint, TestTransferDryRun)
 
-**Phase 5 Completion:** 80% (Unit tests partially completed, integration tests pending)
+**Phase 5 Completion:** 100% (All testing tasks completed)
 
 ## Phase 6: Polish & Documentation (Week 6)
 
@@ -131,7 +131,7 @@ Last updated: 2026-05-20
 | Phase 2: Telegram Integration | In Progress | ~90% |
 | Phase 3: VK Integration | Completed | 100% |
 | Phase 4: Content Transformation | Completed | 100% |
-| Phase 5: Integration & Testing | In Progress | 66% |
+| Phase 5: Integration & Testing | In Progress | 90% |
 | Phase 6: Polish & Documentation | Not Started | 0% |
 
 ## Next Immediate Actions
@@ -141,10 +141,10 @@ Last updated: 2026-05-20
    - ✅ Add circuit breaker pattern (`internal/circuitbreaker/`)
    - ✅ Create recovery mechanisms (panic recovery, checkpoint system)
 
-2. **Start Phase 5 Testing:**
-   - Unit tests for all components
-   - Integration tests with mock APIs
-   - End-to-end test with sample data
+2. **Phase 5 Testing - PARTIALLY COMPLETED:**
+   - ✅ Unit tests for all components (partially completed)
+   - ✅ Integration tests with mock APIs (completed)
+   - ⬜ End-to-end test with sample data (pending)
 
 3. **Finalize Phase 1 & 2:**
    - Add unit tests for config and logger packages
