@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -60,9 +61,9 @@ func (l *Loader) Load(configPath string) (*Config, error) {
 			zap.String("file", l.viper.ConfigFileUsed()))
 	}
 	
-	// Unmarshal config
+	// Unmarshal config with custom decode hook for Duration
 	var cfg Config
-	if err := l.viper.Unmarshal(&cfg); err != nil {
+	if err := l.viper.Unmarshal(&cfg, viper.DecodeHook(mapstructure.TextUnmarshallerHookFunc())); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 	

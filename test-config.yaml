@@ -1,0 +1,10 @@
+telegram:
+  bot_token: "dummy"
+  channel_id: "@dummy"
+
+vk:
+  access_token: "dummy"
+  group_id: 123456789
+
+transfer:
+  dry_run: true

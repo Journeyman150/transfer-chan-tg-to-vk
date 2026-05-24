@@ -201,9 +201,6 @@ func TestConfig_Validate_ZeroRequestsPerSecond(t *testing.T) {
 }
 
 func TestLoader_Load_FromFile(t *testing.T) {
-	// Skip this test due to viper unmarshaling issue with Duration
-	t.Skip("Skipping due to viper unmarshaling issue with Duration type")
-	
 	// Create a temporary config file
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")
