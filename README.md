@@ -1,52 +1,52 @@
-# Telegram to VK Content Transfer
+# Перенос контента из Telegram в VK
 
-A pure Go application for one-time transfer of historical content (text, photos, videos, documents) from a Telegram channel to a VK group/channel.
+Приложение на чистом Go для однократного переноса исторического контента (текст, фото, видео, документы) из канала Telegram в группу/канал ВКонтакте.
 
-## Features
+## Возможности
 
-- **Complete Content Transfer**: Transfer text, photos, videos, and documents
-- **Safe by Default**: Dry-run mode enabled by default to prevent accidental posting
-- **Resumable Transfers**: Checkpoint system allows resuming interrupted transfers
-- **Smart Formatting**: Preserves text formatting and converts media appropriately
-- **Rate Limiting**: Respects both Telegram and VK API rate limits
-- **Structured Logging**: Comprehensive logging for debugging and monitoring
+- **Полный перенос контента**: Перенос текста, фотографий, видео и документов
+- **Безопасность по умолчанию**: Режим `dry-run` включён по умолчанию для предотвращения случайной публикации
+- **Возобновляемый перенос**: Система контрольных точек позволяет возобновлять прерванные переносы
+- **Умное форматирование**: Сохраняет форматирование текста и корректно преобразует медиа
+- **Ограничение скорости**: Соблюдает лимиты API Telegram и VK
+- **Структурированное логирование**: Подробное логирование для отладки и мониторинга
 
-## Quick Start
+## Быстрый старт
 
-### Prerequisites
+### Требования
 
-- Go 1.19 or later
-- Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
-- VK Access Token with required permissions
-- VK Group ID
+- Go 1.19 или новее
+- Токен бота Telegram (от [@BotFather](https://t.me/BotFather))
+- Токен доступа VK с необходимыми правами
+- ID группы VK
 
-### Installation
+### Установка
 
-1. Clone the repository:
+1. Клонируйте репозиторий:
    ```bash
    git clone https://github.com/yourusername/ai-transfer-tg-to-vk.git
    cd ai-transfer-tg-to-vk
    ```
 
-2. Install dependencies:
+2. Установите зависимости:
    ```bash
    go mod download
    ```
 
-3. Generate example configuration:
+3. Сгенерируйте пример конфигурации:
    ```bash
    make generate-config
    ```
 
-4. Edit the configuration file:
+4. Отредактируйте файл конфигурации:
    ```bash
    cp configs/config.example.yaml configs/config.yaml
-   # Edit configs/config.yaml with your credentials
+   # Отредактируйте configs/config.yaml, указав свои учётные данные
    ```
 
-### Configuration
+### Конфигурация
 
-Minimal configuration requires just 4 values:
+Минимальная конфигурация требует всего 4 значения:
 
 ```yaml
 telegram:
@@ -58,139 +58,139 @@ vk:
   group_id: 123456789
 ```
 
-See `configs/config.example.yaml` for all available options.
+Полный список доступных опций см. в `configs/config.example.yaml`.
 
-### Usage
+### Использование
 
-1. **Dry-run (recommended first)**: The default configuration has `dry_run: true`
+1. **Пробный запуск (рекомендуется сначала)**: В конфигурации по умолчанию `dry_run: true`
    ```bash
    make run
    ```
 
-2. **Actual transfer**: Set `dry_run: false` in your config and run:
+2. **Реальный перенос**: Установите `dry_run: false` в конфиге и выполните:
    ```bash
    make run
    ```
 
-3. **Build and run**:
+3. **Сборка и запуск**:
    ```bash
    make build
    ./bin/transfer
    ```
 
-## Project Structure
+## Структура проекта
 
 ```
 ai-transfer-tg-to-vk/
-├── cmd/transfer/main.go          # Application entry point
+├── cmd/transfer/main.go          # Точка входа приложения
 ├── internal/
-│   ├── config/                   # Configuration loading/validation
-│   ├── telegram/                 # Telegram API client
-│   ├── vk/                       # VK API client
-│   ├── media/                    # Media download/upload
-│   ├── transfer/                 # Core transfer logic
-│   ├── transformer/              # Content transformation
-│   └── logger/                   # Structured logging
-├── configs/                      # Configuration files
-├── plans/                        # Architecture and design documents
-├── scripts/                      # Build and utility scripts
+│   ├── config/                   # Загрузка/валидация конфигурации
+│   ├── telegram/                 # Клиент API Telegram
+│   ├── vk/                       # Клиент API VK
+│   ├── media/                    # Скачивание/загрузка медиа
+│   ├── transfer/                 # Основная логика переноса
+│   ├── transformer/              # Трансформация контента
+│   └── logger/                   # Структурированное логирование
+├── configs/                      # Файлы конфигурации
+├── plans/                        # Документы архитектуры и дизайна
+├── scripts/                      # Скрипты сборки и утилиты
 ├── go.mod
 ├── go.sum
 ├── Makefile
 └── README.md
 ```
 
-## Development
+## Разработка
 
-### Building
-
-```bash
-make build          # Build the application
-make build-linux    # Build for Linux
-make build-windows  # Build for Windows
-make build-mac      # Build for macOS
-```
-
-### Testing
+### Сборка
 
 ```bash
-make test           # Run unit tests
-make test-verbose   # Run tests with verbose output
+make build          # Сборка приложения
+make build-linux    # Сборка для Linux
+make build-windows  # Сборка для Windows
+make build-mac      # Сборка для macOS
 ```
 
-### Code Quality
+### Тестирование
 
 ```bash
-make fmt            # Format Go code
-make vet            # Run go vet
-make lint           # Run golint (requires installation)
-make all            # Run all checks and build
+make test           # Запуск модульных тестов
+make test-verbose   # Запуск тестов с подробным выводом
 ```
 
-### Dependencies
+### Качество кода
 
 ```bash
-make deps           # Download dependencies
-make tidy           # Tidy go.mod
+make fmt            # Форматирование Go-кода
+make vet            # Запуск go vet
+make lint           # Запуск golint (требуется установка)
+make all            # Запуск всех проверок и сборка
 ```
 
-## Design Principles
+### Зависимости
 
-1. **Safety First**: Dry-run mode by default, validation before execution
-2. **Minimal Configuration**: Only 4 values required to start
-3. **Progressive Enhancement**: Start with text-only, add media gradually
-4. **Resilience**: Retry logic, circuit breakers, checkpointing
-5. **Transparency**: Detailed logging and progress reporting
+```bash
+make deps           # Скачивание зависимостей
+make tidy           # Очистка go.mod
+```
 
-## API Requirements
+## Принципы проектирования
+
+1. **Безопасность прежде всего**: Режим `dry-run` по умолчанию, валидация перед выполнением
+2. **Минимальная конфигурация**: Всего 4 значения для начала работы
+3. **Постепенное расширение**: Начните с текста, добавляйте медиа постепенно
+4. **Отказоустойчивость**: Логика повторных попыток, circuit breaker, контрольные точки
+5. **Прозрачность**: Детальное логирование и отчёты о прогрессе
+
+## Требования к API
 
 ### Telegram
-- Bot token with access to the channel
-- Bot must be added as administrator to private channels
+- Токен бота с доступом к каналу
+- Бот должен быть добавлен как администратор в закрытые каналы
 
 ### VK
-- Access token with these permissions: `wall`, `photos`, `video`, `docs`, `groups`
-- User must be administrator of the target group
+- Токен доступа с правами: `wall`, `photos`, `video`, `docs`, `groups`
+- Пользователь должен быть администратором целевой группы
 
-## Limitations
+## Ограничения
 
-- **One-time transfer**: Designed for historical data migration, not real-time sync
-- **Media size limits**: Respects VK's file size limits (photos: 50MB, videos: 2GB, docs: 2GB)
-- **Rate limits**: Transfers large channels slowly to avoid API restrictions
-- **Formatting**: Some Telegram formatting may not translate perfectly to VK
+- **Однократный перенос**: Предназначен для миграции исторических данных, а не для синхронизации в реальном времени
+- **Лимиты размера медиа**: Соблюдает лимиты VK на размер файлов (фото: 50 МБ, видео: 2 ГБ, документы: 2 ГБ)
+- **Лимиты запросов**: Переносит большие каналы медленно, чтобы избежать ограничений API
+- **Форматирование**: Некоторое форматирование Telegram может некорректно отображаться в VK
 
-## Troubleshooting
+## Устранение неполадок
 
-### Common Issues
+### Частые проблемы
 
-1. **"Config file not found"**: Ensure `configs/config.yaml` exists or use `--config` flag
-2. **"Invalid bot token"**: Verify your Telegram bot token and ensure the bot has channel access
-3. **"VK authentication failed"**: Check your access token permissions and group ID
-4. **"Rate limit exceeded"**: The application will automatically retry with exponential backoff
+1. **"Config file not found"**: Убедитесь, что `configs/config.yaml` существует, или используйте флаг `--config`
+2. **"Invalid bot token"**: Проверьте токен бота Telegram и убедитесь, что бот имеет доступ к каналу
+3. **"VK authentication failed"**: Проверьте права токена доступа и ID группы
+4. **"Rate limit exceeded"**: Приложение автоматически повторит попытку с экспоненциальной задержкой
 
-### Logs
+### Логи
 
-Logs are written to stdout by default. To write to a file, set `logging.output_path` in config.
+По умолчанию логи выводятся в stdout. Для записи в файл укажите `logging.output_path` в конфиге.
 
-## Contributing
+## Участие в разработке
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. Сделайте форк репозитория
+2. Создайте ветку для функции
+3. Внесите свои изменения
+4. Добавьте тесты, если применимо
+5. Отправьте pull request
 
-## License
+## Лицензия
 
 [MIT License](LICENSE)
 
-## Acknowledgments
+## Благодарности
 
-- [go-telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api) for Telegram API
-- [vksdk](https://github.com/SevereCloud/vksdk) for VK API
-- [viper](https://github.com/spf13/viper) for configuration
-- [zap](https://github.com/uber-go/zap) for logging
+- [go-telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api) за Telegram API
+- [vksdk](https://github.com/SevereCloud/vksdk) за VK API
+- [viper](https://github.com/spf13/viper) за конфигурацию
+- [zap](https://github.com/uber-go/zap) за логирование
 
-## Support
+## Поддержка
 
-For issues and questions, please open an issue on GitHub.
+По вопросам и проблемам, пожалуйста, открывайте issue на GitHub.
