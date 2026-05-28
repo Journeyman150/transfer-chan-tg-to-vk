@@ -172,24 +172,9 @@ make tidy           # Очистка go.mod
 
 По умолчанию логи выводятся в stdout. Для записи в файл укажите `logging.output_path` в конфиге.
 
-## Участие в разработке
-
-1. Сделайте форк репозитория
-2. Создайте ветку для функции
-3. Внесите свои изменения
-4. Добавьте тесты, если применимо
-5. Отправьте pull request
-
 ## Лицензия
 
 [MIT License](LICENSE)
-
-## Благодарности
-
-- [go-telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api) за Telegram API
-- [vksdk](https://github.com/SevereCloud/vksdk) за VK API
-- [viper](https://github.com/spf13/viper) за конфигурацию
-- [zap](https://github.com/uber-go/zap) за логирование
 
 ## Поддержка
 
